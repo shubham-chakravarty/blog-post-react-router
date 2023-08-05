@@ -8,6 +8,7 @@ import About from "./About";
 import Missing from "./Missing";
 import { Route, Switch, useHistory } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 
 function App() {
   const [search, setSearch] = useState("");
@@ -38,12 +39,32 @@ function App() {
     },
   ]);
   const [searchResults, setSearchResults] = useState([]);
+  const [postTitle, setPostTitle] = useState("");
+  const [postBody, setPostBody] = useState("");
   const history = useHistory();
+
+  useEffect(() => {
+    const searchPosts = posts.filter((post) => post.title.toLowerCase().includes(search.toLowerCase()) || 
+    post.body.toLowerCase().includes(search.toLowerCase()));
+    setSearchResults(searchPosts.reverse());
+  }, [posts, search]);
+
+  const handleSumbmit = (e) => {
+    e.preventDefault();
+    const id = posts.length ? posts[posts.length - 1].id + 1 : 1;
+    const dateTime = format(new Date(), "MMMM dd, yyyy pp");
+    const newPost = { id, title: postTitle, dateTime, body: postBody };
+    const allPosts = [...posts, newPost];
+    setPosts(allPosts);
+    setPostTitle("");
+    setPostBody("");
+    history.push("/");
+  };
 
   const handleDelete = (id) => {
     const updatedPost = posts.filter((post) => post.id !== id);
     setPosts(updatedPost);
-	history.push('/');
+    history.push("/");
   };
 
   return (
@@ -52,10 +73,16 @@ function App() {
       <Nav search={search} setSearch={setSearch} />
       <Switch>
         <Route exact path="/">
-          <Home posts={posts} />
+          <Home posts={searchResults} />
         </Route>
         <Route exact path="/post">
-          <NewPost />
+          <NewPost
+            handleSumbmit={handleSumbmit}
+            postTitle={postTitle}
+            setPostTitle={setPostTitle}
+            postBody={postBody}
+            setPostBody={setPostBody}
+          />
         </Route>
         <Route path="/post/:id">
           <PostPage posts={posts} handleDelete={handleDelete} />
